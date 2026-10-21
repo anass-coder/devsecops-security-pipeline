@@ -88,10 +88,10 @@ def get_user(user_id):
     This creates a SQLi surface the pipeline should detect.
     """
     db = get_db()
-    query = "SELECT id, username, role FROM users WHERE id = " + user_id
-    log.info("Executing query: %s", query)
+    query = "SELECT id, username, role FROM users WHERE id = ?"
+    log.info("Executing query: %s with id=%s", query, user_id)
     try:
-        row = db.execute(query).fetchone()
+        row = db.execute(query, (user_id,)).fetchone()
     except sqlite3.Error as e:
         # Verbose error surfaced to the client — also a finding.
         return jsonify({"error": str(e), "query": query}), 500
