@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .venv/
 .venv-sast/
+.venv-sca/
 *.db
 gitleaks-report*.json
 reports/

@@ -91,9 +91,45 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  dependency-scanning:
+    name: SCA (pip-audit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: python -m pip install -r security/requirements-sca.txt
+
+      - name: Validate vulnerable dependency detection and remediation
+        run: python security/scripts/validate_pip_audit.py --report-dir reports
+
+      - name: Audit application dependencies and save JSON report
+        run: |
+          mkdir -p reports
+          python -m pip_audit -r app/requirements.txt --strict \
+            --vulnerability-service pypi --format json \
+            --aliases on --desc on --progress-spinner off \
+            --output reports/pip-audit.json
+
+      - name: Upload dependency reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: reports/pip-audit*.json
+          if-no-files-found: warn
+          retention-days: 7
+
   build-and-test:
     name: Build and test
-    needs: [secret-scanning, sast]
+    needs: [secret-scanning, sast, dependency-scanning]
     runs-on: ubuntu-latest
 
     steps:
