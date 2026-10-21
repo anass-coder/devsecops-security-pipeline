@@ -21,6 +21,10 @@ The workflow in `.github/workflows/security.yml` currently runs on pushes:
 7. Test the built container, scan that same image with Trivy, validate a controlled
    container dependency remediation, and upload JSON reports. HIGH or CRITICAL
    container vulnerabilities fail the job; all severities remain in the report.
+8. Start isolated application containers, wait for `/health`, and run ZAP baseline
+   scans with explicit API requests. Verify a controlled missing-header finding
+   disappears after remediation, save JSON/HTML reports, and enforce the DAST
+   policy against the final application.
 
 See [Phase 5: secret scanning](security/SECRET_SCANNING.md) for commands, report
 fields, validation details, exclusions, and remediation guidance.
@@ -34,6 +38,9 @@ dependency-report artifacts.
 
 See [Phase 8: container scanning](security/CONTAINER_SCANNING.md) for Trivy report
 fields, the Debian/Alpine comparison, container remediation, and severity policy.
+
+See [Phase 9: DAST](security/DAST.md) for ZAP coverage, HTTP-header remediation,
+report fields, risk levels, local commands, and artifact locations.
 
 ## Run locally
 

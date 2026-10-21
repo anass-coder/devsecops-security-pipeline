@@ -33,6 +33,15 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {"status": "ok"})
 
+    def test_security_headers_on_success_and_errors(self):
+        for path in ("/health", "/users/99999", "/missing-page"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.headers.get("X-Content-Type-Options"), "nosniff")
+                policy = response.headers.get("Content-Security-Policy", "")
+                self.assertIn("default-src 'none'", policy)
+                self.assertIn("frame-ancestors 'none'", policy)
+
     def test_existing_user(self):
         response = self.client.get("/users/1")
         self.assertEqual(response.status_code, 200)

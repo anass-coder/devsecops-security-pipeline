@@ -19,6 +19,16 @@ log = logging.getLogger("soc-app")
 DB_PATH = os.environ.get("DB_PATH", "users.db")
 
 
+@app.after_request
+def add_security_headers(response):
+    # Apply to successful responses and application-generated errors alike.
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    )
+    return response
+
+
 # --- DB helpers --------------------------------------------------------------
 def get_db():
     if "db" not in g:

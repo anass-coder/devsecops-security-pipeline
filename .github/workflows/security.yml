@@ -197,3 +197,25 @@ jobs:
           path: reports/trivy*.json
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Run ZAP baseline and verify HTTP header remediation
+        timeout-minutes: 15
+        run: >-
+          python security/scripts/run_zap.py
+          --image devsecops-security-app:${{ github.sha }}
+          --zap-image ghcr.io/zaproxy/zaproxy@sha256:5ccfff9a411743ab2615136a2edd7416bec9ce41572fa94e935df38c14adb2b6
+          --report-dir reports/zap
+
+      - name: Enforce DAST alert policy
+        run: >-
+          python security/scripts/check_zap.py reports/zap/final/zap.json
+          --summary reports/zap/summary.json
+
+      - name: Upload ZAP reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: reports/zap/
+          if-no-files-found: warn
+          retention-days: 7
