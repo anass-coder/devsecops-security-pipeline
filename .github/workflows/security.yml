@@ -128,7 +128,7 @@ jobs:
           retention-days: 7
 
   build-and-test:
-    name: Build and test
+    name: Build, test and scan container
     needs: [secret-scanning, sast, dependency-scanning]
     runs-on: ubuntu-latest
 
@@ -148,4 +148,52 @@ jobs:
         run: python -m unittest discover -s tests -v
 
       - name: Build Docker image
-        run: docker build -t devsecops-security-app:${{ github.sha }} .
+        run: docker build --pull -t devsecops-security-app:${{ github.sha }} .
+
+      - name: Run tests inside the built image
+        run: >-
+          docker run --rm
+          --mount "type=bind,source=$GITHUB_WORKSPACE,target=/workspace,readonly"
+          -w /workspace devsecops-security-app:${{ github.sha }}
+          python -B -m unittest discover -s tests -v
+
+      - name: Prepare container report directory
+        run: mkdir -p reports
+
+      - name: Scan final Docker image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.1
+          scan-type: image
+          image-ref: devsecops-security-app:${{ github.sha }}
+          scanners: vuln
+          vuln-type: os,library
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          list-all-pkgs: true
+          format: json
+          output: reports/trivy.json
+          exit-code: '0'
+          timeout: 10m
+          cache-dir: ${{ runner.temp }}/trivy-cache
+        env:
+          TRIVY_IMAGE_SRC: docker
+
+      - name: Verify container dependency remediation
+        run: >-
+          python security/scripts/validate_trivy.py
+          --image devsecops-security-app:${{ github.sha }}
+          --after-report reports/trivy.json
+          --cache-dir "$RUNNER_TEMP/trivy-cache"
+
+      - name: Enforce HIGH and CRITICAL container vulnerability policy
+        run: trivy convert --scanners vuln --format table --severity HIGH,CRITICAL --exit-code 1 reports/trivy.json
+
+      - name: Upload container vulnerability reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: reports/trivy*.json
+          if-no-files-found: warn
+          retention-days: 7

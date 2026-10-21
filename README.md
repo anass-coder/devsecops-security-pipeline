@@ -18,6 +18,9 @@ The workflow in `.github/workflows/security.yml` currently runs on pushes:
    Docker. Dependency vulnerabilities block the build. SAST records the training
    app's intentional findings without blocking; scanner errors and failed
    validation still fail the SAST job.
+7. Test the built container, scan that same image with Trivy, validate a controlled
+   container dependency remediation, and upload JSON reports. HIGH or CRITICAL
+   container vulnerabilities fail the job; all severities remain in the report.
 
 See [Phase 5: secret scanning](security/SECRET_SCANNING.md) for commands, report
 fields, validation details, exclusions, and remediation guidance.
@@ -28,6 +31,9 @@ JSON field descriptions, severity mapping, and detection/remediation demonstrati
 See [Phase 7: dependency scanning](security/DEPENDENCY_SCANNING.md) for pip-audit
 usage, package/advisory/fix fields, the controlled upgrade demonstration, and
 dependency-report artifacts.
+
+See [Phase 8: container scanning](security/CONTAINER_SCANNING.md) for Trivy report
+fields, the Debian/Alpine comparison, container remediation, and severity policy.
 
 ## Run locally
 
