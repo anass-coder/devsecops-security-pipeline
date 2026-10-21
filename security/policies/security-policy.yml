@@ -1,0 +1,54 @@
+policy_version: 1
+
+counting:
+  scope: pipeline_run
+  include: actual_target_findings
+  exclude: controlled_validation_findings
+
+critical:
+  max_allowed: 0
+  action: block
+  rationale: >-
+    Critical findings require remediation or explicit review before accepting
+    the build. This project accepts no Critical findings by default.
+
+high:
+  max_allowed: 0
+  action: block
+  rationale: >-
+    High-severity weaknesses can have substantial security impact. A green
+    build should not accept this level of known risk by default.
+
+medium:
+  max_allowed: 5
+  action: warn
+  on_threshold_exceeded: block
+  rationale: >-
+    Permit a small, visible backlog while this training project evolves.
+    One through five Medium findings produce a warning; six or more block.
+    Five is a project risk-budget choice, not an industry standard or proof
+    that five findings are safe. Review this budget as the project matures.
+
+low:
+  action: report
+  rationale: >-
+    Keep Low findings visible for review without blocking development.
+    There is no numeric blocking threshold for this severity.
+
+informational:
+  action: report
+  rationale: >-
+    Preserve observations and context without treating them as blocking
+    vulnerabilities. There is no numeric blocking threshold.
+
+# Unknown is an unclassified finding, not a severity lower than Low.
+unknown:
+  max_allowed: 0
+  action: block
+  rationale: >-
+    An absent or unrecognized severity must be reviewed and classified.
+    Do not silently treat an unrated finding as Low or Informational.
+
+# Decision precedence: block > warn > report. Any blocking severity wins;
+# warnings at another severity cannot turn a blocked run into an accepted run.
+# Reported or warned findings remain visible; neither action suppresses them.
