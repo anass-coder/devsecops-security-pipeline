@@ -1,0 +1,46 @@
+# Reviewed, project-local Python security rules. No registry/network lookup needed.
+rules:
+  - id: python-sql-query-concatenation
+    languages: [python]
+    severity: ERROR
+    message: >-
+      A concatenated value reaches a SQL execute call. If input is untrusted,
+      this can allow SQL injection. Use a fixed query with bound parameters.
+    mode: taint
+    pattern-sources:
+      - pattern: $LEFT + $RIGHT
+    pattern-sinks:
+      - patterns:
+          - pattern: $DB.execute($QUERY, ...)
+          - focus-metavariable: $QUERY
+    metadata:
+      category: security
+      technology: [python, sqlite]
+      cwe: ["CWE-89: SQL Injection"]
+      confidence: MEDIUM
+
+  - id: python-eval
+    languages: [python]
+    severity: ERROR
+    message: >-
+      eval() executes Python expressions. Avoid evaluating untrusted input;
+      use a parser such as json.loads() when the expected input is JSON.
+    pattern: eval(...)
+    metadata:
+      category: security
+      technology: [python]
+      cwe: ["CWE-95: Eval Injection"]
+      confidence: MEDIUM
+
+  - id: flask-debug-enabled
+    languages: [python]
+    severity: WARNING
+    message: >-
+      A server is started with debug=True. Disable debug mode outside local
+      development to avoid exposing debugging functionality.
+    pattern: $APP.run(..., debug=True, ...)
+    metadata:
+      category: security
+      technology: [python, flask]
+      cwe: ["CWE-489: Active Debug Code"]
+      confidence: MEDIUM

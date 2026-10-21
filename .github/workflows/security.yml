@@ -55,9 +55,45 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Semgrep
+        run: python -m pip install -r security/requirements-sast.txt
+
+      - name: Validate insecure pattern detection and remediation
+        run: python security/scripts/validate_semgrep.py
+
+      # Record intentional training-app findings; scanner errors still fail CI.
+      - name: Scan application and save JSON report
+        run: |
+          mkdir -p reports
+          semgrep scan --config security/semgrep.yml --strict \
+            --metrics=off --disable-version-check --no-rewrite-rule-ids \
+            --json --output reports/semgrep.json app
+
+      - name: Upload Semgrep report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: reports/semgrep.json
+          if-no-files-found: warn
+          retention-days: 7
+
   build-and-test:
     name: Build and test
-    needs: secret-scanning
+    needs: [secret-scanning, sast]
     runs-on: ubuntu-latest
 
     steps:
